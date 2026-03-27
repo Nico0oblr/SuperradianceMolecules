@@ -5,7 +5,7 @@ function latex_plot_setup(; linewidth_pt=345.0,   # LaTeX \linewidth in pt
     fraction=0.5,           # Fraction of \linewidth for figure width
     font_size_pt=10,         # Font size in pt
     scale=1.0,
-    ratio = (sqrt(5) - 1) / 2)               # Scale factor for notebook display
+    ratio = (sqrt(5) + 1) / 2)               # Scale factor for notebook display
 # Convert pt to inches
 width_in = linewidth_pt * fraction / 72.27
 width_in *= scale
@@ -13,7 +13,7 @@ height_in = width_in * ratio # Golden ratio
 recommended_linewidth = 0.12 * font_size_pt * scale
 
 # Set matplotlib settings
-PyPlot.matplotlib.rc("text.latex", preamble="\\usepackage{physics,bm}")
+PyPlot.matplotlib.rc("text.latex", preamble="\\usepackage{physics,bm,amsfonts}")
 PyPlot.matplotlib.rc("text", usetex=true)
 PyPlot.matplotlib.rc("font", family="serif", size=font_size_pt * scale)
 PyPlot.matplotlib.rc("lines", linewidth=recommended_linewidth)
@@ -37,7 +37,7 @@ PyPlot.matplotlib.rc("legend", handlelength=2.0)
 
 cycler = pyimport("matplotlib").cycler
 # Combine color and linestyle cycles
-colors = ["black", "blue", "orange", "green"] # default colors
+colors = ["red", "blue", "orange", "green"] # default colors
 linestyles = ["-", "-.", "--", ":"]
 
 # Repeat to match lengths
