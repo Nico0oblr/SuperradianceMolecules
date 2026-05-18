@@ -55,8 +55,8 @@ function plot_spont_scaling_single!(ax, data_sharp, data_coll;
     end
 
     ax.set_yscale("log")
-    ax.set_xlabel(L"$\bar g_\gamma$")
-    ax.set_ylabel(L"$I_\star(\bar g_\gamma)/I_\star(0)$")
+    ax.set_xlabel(L"$\gamma \log N/(N\Gamma)$")
+    ax.set_ylabel(L"$I_\star/I_\star(\gamma=0)$")
     ax.legend(; legend_kwargs...)
     ax.set_ylim(bottom = 1e-7, top = 10)
 
@@ -113,8 +113,8 @@ function plot_spont_phase_diagram!(
         )
     end
 
-    ax.set_xlabel(L"$\bar g_\gamma$")
-    ax.set_ylabel(L"$g_\xi$")
+    ax.set_xlabel(L"$\gamma \log N/(N\Gamma)$")
+    ax.set_ylabel(L"$\xi/(N\Gamma)$")
 
     if add_colorbar
         cbar = ax.figure.colorbar(im, ax=ax, pad=0.02)
@@ -141,8 +141,8 @@ function plot_spont_meanfield_g_gamma!(ax, data;
     end
 
     ax.set_yscale("log")
-    ax.set_xlabel(L"$g_\gamma$")
-    ax.set_ylabel(L"$I_\star(g_\gamma)/I_\star(0)$")
+    ax.set_xlabel(L"$\gamma/(N\Gamma)$")
+    ax.set_ylabel(L"$I_\star(\gamma)/I_\star(0)$")
     ax.legend(; legend_kwargs...)
 
     return ax
@@ -150,8 +150,8 @@ end
 
 function plot_spont_peak_times!(ax, data_coll, data_mf;
     cs = ["red", "stub", "blue", "orange", "green"],
-    xlabel = L"$\bar g_{\gamma}$",
-    ylabel = L"$N t_{\star} / \log N$",
+    xlabel = L"$\gamma \log N/(N\Gamma)$",
+    ylabel = L"$N \Gamma t_{\star} /\log N$",
     ms = 2,
     lw = 1.5,
     mc_label_prefix = "MC",

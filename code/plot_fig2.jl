@@ -18,7 +18,7 @@ function plot_fig2a!(ax, data)
 
     ax.plot(
         data["S_mf"], data["M_mf"],
-        color="red", linestyle="solid", linewidth=2.0,
+        color="red", linestyle="dashed", linewidth=2.0,
         label="MF"
     )
 
@@ -60,8 +60,8 @@ function plot_compare_mc_mf_intensity!(ax, data; cmap_name="viridis")
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(L"$t$")
-    ax.set_ylabel(L"$I/N^2$")
+    ax.set_xlabel(L"$t\Gamma$")
+    ax.set_ylabel(L"$I/(\Gamma N^2)$")
     ax.set_ylim(1e-5, 1)
 
     mc_proxy, = ax.plot([], []; color = "black", linestyle = "-", linewidth = 2.0)
@@ -87,7 +87,7 @@ function plot_compare_mc_mf_intensity!(ax, data; cmap_name="viridis")
     leg2 = ax.legend(
         r_proxies,
         r_labels;
-        loc = "upper right",
+        loc = "upper left",
         legend_kwargs...
     )
 
@@ -108,8 +108,8 @@ function plot_dephasing_panel_a!(ax, d)
     end
 
     ax.set_yscale("log")
-    ax.set_ylabel(L"$I/I(g_\xi=0)$")
-    ax.set_xlabel(L"$g_\xi$")
+    ax.set_ylabel(L"$I_\star/I_\star(\xi=0)$")
+    ax.set_xlabel(L"$\xi/(N\Gamma)$")
     ax.grid(true)
     ax.legend(; legend_kwargs...)
 
@@ -133,7 +133,7 @@ function plot_dephasing_panel_b!(ax, d; cs=["red", "blue", "orange"])
     ax.set_ylim(bottom=1.0, top=14)
     ax.set_yscale("log")
     ax.set_ylabel(L"$t_\star \Gamma N/\log(N)$")
-    ax.set_xlabel(L"$g_\xi$")
+    ax.set_xlabel(L"$\xi/(N\Gamma)$")
     ax.grid(true)
 
     return ax

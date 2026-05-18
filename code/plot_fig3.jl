@@ -134,7 +134,7 @@ function plot_dephasing_peak_time_panel!(ax, data;
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(L"$N$")
-    ax.set_ylabel(L"$t_\star$")
+    ax.set_ylabel(L"$t_\star\Gamma$")
 
     return ax
 end
@@ -189,7 +189,7 @@ function plot_dephasing_panel_c_below_fit!(ax, d; which=2, Nmin=1e5)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(L"$N$")
-    ax.set_ylabel(L"$I_{\max}/N^2$")
+    ax.set_ylabel(L"$I_{\star}/(\Gamma N^2)$")
     ax.legend(; legend_kwargs...)
 
     return (
@@ -252,7 +252,7 @@ function plot_dephasing_panel_c_above_fit!(ax, d; which=2, Nmin=1e5)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(L"$N$")
-    ax.set_ylabel(L"$I_{\max}/N^2$")
+    ax.set_ylabel(L"$I_{\star}/(\Gamma N^2)$")
     ax.legend(; legend_kwargs...)
 
     return (

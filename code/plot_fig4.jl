@@ -19,7 +19,7 @@ function plot_fig2b_gamma!(ax, data)
     end
 
     ax.plot(data["S_mc"], data["M_mc"], color="blue", linewidth=2.0, label="MC average")
-    ax.plot(data["S_mf"], data["M_mf"], color="red", linewidth=2.0, label="Mean field")
+    ax.plot(data["S_mf"], data["M_mf"], color="red", linewidth=2.0, label="MF", linestyle = "dashed")
 
     ax.plot(data["Sgrid"], data["upper_boundary"], "k--", linewidth=1.5)
     ax.plot(data["Sgrid"], data["lower_boundary"], "k--", linewidth=1.5)
@@ -36,7 +36,7 @@ end
 # Panel (b)
 # --------------------------------------------------
 
-function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="viridis", show_style_note=true)
+function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="viridis")
     cmap = get_cmap(cmap_name)
     gbars = data["gbars_gamma"]
     norm = matplotlib.colors.Normalize(vmin=minimum(gbars), vmax=maximum(gbars))
@@ -46,33 +46,55 @@ function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="viridis", show
         color = cmap(norm(gbar))
 
         ax.plot(
-            curve.ts_mc, curve.I_mc,
-            color=color, linestyle="-", linewidth=2.0,
-            label="\$\\bar g_\\gamma=$(gbar)\$"
+            curve.ts_mc, curve.I_mc;
+            color = color,
+            linestyle = "-",
+            linewidth = 2.0,
         )
 
         ax.plot(
-            curve.ts_mf, curve.I_mf,
-            color=color, linestyle="--", linewidth=1.2, alpha=0.8
+            curve.ts_mf, curve.I_mf;
+            color = color,
+            linestyle = "--",
+            linewidth = 1.2,
+            alpha = 0.8,
         )
     end
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(L"$t$")
-    ax.set_ylabel(L"$I/N^2$")
+    ax.set_xlabel(L"$t\Gamma$")
+    ax.set_ylabel(L"$I/(\Gamma N^2)$")
     ax.set_ylim(1e-5, 1)
-    ax.legend(; legend_kwargs...)
 
-    if show_style_note
-        ax.text(
-            0.03, 0.55,
-            "solid: MC\n dashed: Mean field",
-            transform=ax.transAxes,
-            fontsize=12,
-            bbox=Dict("facecolor"=>"white", "alpha"=>0.8)
-        )
+    mc_proxy, = ax.plot([], []; color="black", linestyle="-", linewidth=2.0)
+    mf_proxy, = ax.plot([], []; color="black", linestyle="--", linewidth=1.2)
+
+    leg1 = ax.legend(
+        [mc_proxy, mf_proxy],
+        [L"$\mathrm{MC}$", L"$\mathrm{MF}$"];
+        loc="lower left",
+        legend_kwargs...
+    )
+
+    gbar_proxies = Any[]
+    gbar_labels = Any[]
+
+    for gbar in gbars
+        color = cmap(norm(gbar))
+        proxy, = ax.plot([], []; color=color, linestyle="-", linewidth=2.0)
+        push!(gbar_proxies, proxy)
+        push!(gbar_labels, "\$\\bar g_\\gamma=$(gbar)\$")
     end
+
+    leg2 = ax.legend(
+        gbar_proxies,
+        gbar_labels;
+        loc="upper left",
+        legend_kwargs...
+    )
+
+    ax.add_artist(leg1)
 
     return ax
 end
