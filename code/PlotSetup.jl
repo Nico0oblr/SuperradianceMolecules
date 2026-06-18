@@ -35,16 +35,6 @@ legend_marker_scale = 0.05  # scale down legend line/marker size
 PyPlot.matplotlib.rc("legend", fontsize=legend_fontsize)
 PyPlot.matplotlib.rc("legend", handlelength=2.0) 
 
-cycler = pyimport("matplotlib").cycler
-# Combine color and linestyle cycles
-colors = ["red", "blue", "orange", "green"] # default colors
-linestyles = ["-", "-.", "--", ":"]
-
-# Repeat to match lengths
-n = length(colors)
-full_cycle = cycler("color", repeat(colors, inner=n ÷ length(colors))) +
-              cycler("linestyle", repeat(linestyles, inner=n ÷ length(linestyles)))
-PyPlot.matplotlib.rc("axes", prop_cycle=full_cycle)
 
 
 return (width_in, height_in)

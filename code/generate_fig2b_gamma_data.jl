@@ -9,7 +9,7 @@ function generate_fig2b_gamma_data(;
     time_factor = 200,
     N_traj = 400,
     n_bg = 10,
-    g_xi = 0.5,
+    g_xi = 0.0,
     gbar_gamma = 0.2,
     outfile = "../plot_data/fig_trajectories_gamma.jld2",
 )

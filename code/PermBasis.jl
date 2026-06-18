@@ -1,7 +1,6 @@
 using DataStructures
 using OrdinaryDiffEq
 using SparseArrays
-using PyPlot
 using LinearAlgebra
 
 # Collective factors (used also in the individual channels):

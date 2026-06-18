@@ -8,7 +8,7 @@ function generate_compare_mc_mf_intensity_data(;
     N = 30000,
     t_fac = 20,
     N_traj = 1000,
-    rs = range(0.0, 1.1, 10),
+    rs = [0.0, 0.6, 0.9, 1.05],
     outfile = "../plot_data/fig_compare_mc_mf_intensity.jld2",
 )
     tmax = t_fac * log(N) / N

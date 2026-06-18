@@ -5,7 +5,7 @@ PLOT_DATA := ../plot_data
 FIG_DATA := ../data
 
 # Shared source dependencies
-GEN_COMMON := $(CODE)/PermBasis.jl $(CODE)/MonteCarloMF.jl
+GEN_COMMON := $(CODE)/MonteCarloMF.jl
 PLOT_COMMON := $(CODE)/PlotSetup.jl $(CODE)/style.jl
 
 .PHONY: all data figs clean fig2 fig3 fig4 fig5

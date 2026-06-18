@@ -9,7 +9,7 @@ function generate_compare_mc_mf_intensity_gamma_data(;
     t_fac = 20,
     N_traj = 1000,
     g_xi = 0.5,
-    gbars_gamma = range(0.0, 1.1, 10),
+    gbars_gamma = [0.0, 0.2, 0.5, 0.8],
     outfile = "../plot_data/fig_compare_mc_mf_intensity_gamma.jld2",
 )
     Γ = 1.0
