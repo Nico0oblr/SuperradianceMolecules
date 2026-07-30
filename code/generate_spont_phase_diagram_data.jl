@@ -1,4 +1,3 @@
-include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
 using Base.Threads
@@ -6,10 +5,10 @@ using DifferentialEquations
 using JLD2
 
 function generate_spont_phase_diagram_data(;
-    outfile = "../plot_data/spont_phase_diagram.jld2",
+    outfile = "../plot_data/spont_phase_diagram_8.jld2",
     gs = range(0.0, 0.38, 200),
     rs = range(0.0, 1.2, 200),
-    pow = 200,
+    pow = 8,
     reltol = 1e-8,
     abstol = 1e-10,
 )

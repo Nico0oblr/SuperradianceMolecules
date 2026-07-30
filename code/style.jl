@@ -10,16 +10,10 @@ const legend_kwargs = (
     handlelength = 2.0,
 )
 
-# Default colors (optional but useful)
-const default_colors = ["red", "blue", "orange", "green", "violet", "cyan"]
 const tab_colors = [
     "tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple",
     "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan",
 ]
-
-# Line / marker defaults
-const default_lw = 1.8
-const default_ms = 20
 
 function sci_label(N)
     exp = floor(Int, log10(N))

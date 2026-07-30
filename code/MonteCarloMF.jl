@@ -1,4 +1,5 @@
 using Random
+using OrdinaryDiffEq
 
 valid(s,m) = abs(m) <= s || isapprox(s, m, atol=1e-5)
 mvals(N) = range(-N/2, N/2)
@@ -209,24 +210,6 @@ function simulate_ensemble(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0
 end
 
 element(arr, n) = map(x->x[n], arr)
-
-function sci_label(N)
-    exp = floor(Int, log10(N))
-    mant = N / 10.0^exp
-
-    # if mantissa is (numerically) an integer → print as Int
-    if isapprox(mant, round(mant); atol=1e-4)
-        mant_str = string(Int(round(mant)))
-    else
-        mant_str = string(mant)
-    end
-
-    return "\$N=$(mant_str)\\times 10^{$exp}\$"
-end
-
-function namedtuple_to_dict(nt::NamedTuple)
-    Dict(string(k) => v for (k, v) in pairs(nt))
-end
 
 function meanfield_log_transformed!(du, u, p, t)
     L, m = u  # u[1] is log(I)

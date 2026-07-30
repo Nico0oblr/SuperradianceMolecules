@@ -1,4 +1,3 @@
-include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
 using Base.Threads
