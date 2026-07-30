@@ -1,6 +1,7 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using DifferentialEquations
 using JLD2
 
@@ -17,27 +18,31 @@ function generate_spont_phase_diagram_data(;
 
     data = zeros(length(rs), length(gs))
 
-    for (i, r) in enumerate(rs)
-        for (j, g) in enumerate(gs)
-            Γ = 1.0
-            ξ = Nf * r
-            γ = Nf * g / log(Nf)
+    t_end = 100.0 * log(Nf) / Nf
+    saveat = range(0.0, t_end, 30000)
+    jobs = collect(CartesianIndices(data))
 
-            p = [Γ, ξ, Nf, γ]
-            u0 = [-log(Nf), 0.5]
-            t_end = 100.0 * log(Nf) / Nf
+    @threads for job in jobs
+        i, j = Tuple(job)
+        r = rs[i]
+        g = gs[j]
+        Γ = 1.0
+        ξ = Nf * r
+        γ = Nf * g / log(Nf)
 
-            prob = ODEProblem(meanfield_log_transformed!, u0, (0.0, t_end), p)
-            sol = solve(
-                prob,
-                AutoTsit5(Rosenbrock23()),
-                reltol = reltol,
-                abstol = abstol,
-                saveat = range(0.0, t_end, 30000)
-            )
+        p = [Γ, ξ, Nf, γ]
+        u0 = [-log(Nf), 0.5]
 
-            data[i, j] = exp(maximum(x -> x[1], sol.u))
-        end
+        prob = ODEProblem(meanfield_log_transformed!, u0, (0.0, t_end), p)
+        sol = solve(
+            prob,
+            AutoTsit5(Rosenbrock23()),
+            reltol = reltol,
+            abstol = abstol,
+            saveat = saveat
+        )
+
+        data[i, j] = exp(maximum(x -> x[1], sol.u))
     end
 
     jldsave(outfile;

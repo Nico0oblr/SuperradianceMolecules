@@ -10,8 +10,8 @@ function analytic_spont_boundary(rs)
 end
 
 function plot_spont_scaling_single!(ax, data_sharp, data_coll;
-    colors_mc = ["red", "blue", "orange"],
-    colors_sharp = ["blue", "green", "violet"],
+    colors_mc = tab_colors,
+    colors_sharp = tab_colors,
     mf_linestyle = "solid",
     sharp_linestyle = "solid",
 )
@@ -19,6 +19,9 @@ function plot_spont_scaling_single!(ax, data_sharp, data_coll;
     Ns = data_coll["Ns"]
     mc = data_coll["mc_intens"]
     mf = data_coll["mf_itens"]
+
+    n_proxies = Any[]
+    n_labels = Any[]
 
     for j in (1:length(Ns))[[1,3]]
         ax.scatter(
@@ -28,7 +31,6 @@ function plot_spont_scaling_single!(ax, data_sharp, data_coll;
             edgecolor = "k",
             s = 18,
             linewidths = 0.45,
-            label = "MC " * sci_label(Ns[j])
         )
 
         ax.plot(
@@ -38,8 +40,11 @@ function plot_spont_scaling_single!(ax, data_sharp, data_coll;
             linestyle = mf_linestyle,
             linewidth = 1.1,
             alpha = 1.0,
-            label = "MF " * sci_label(Ns[j])
         )
+
+        proxy, = ax.plot([], []; color = colors_mc[j], linestyle = "solid", linewidth = 1.8)
+        push!(n_proxies, proxy)
+        push!(n_labels, sci_label(Ns[j]))
     end
 
     for (i, curve) in enumerate(data_sharp["curves"][[1,2]])
@@ -50,14 +55,35 @@ function plot_spont_scaling_single!(ax, data_sharp, data_coll;
             linestyle = sharp_linestyle,
             linewidth = 1.8,
             alpha = 0.85,
-            label = "\$N=10^{$(curve.pow)}\$ MF"
         )
+
+        proxy, = ax.plot([], []; color = colors_sharp[i], linestyle = "solid", linewidth = 1.8)
+        push!(n_proxies, proxy)
+        push!(n_labels, "\$N=10^{$(curve.pow)}\$")
     end
 
     ax.set_yscale("log")
     ax.set_xlabel(L"$\gamma \log N/(N\Gamma)$")
     ax.set_ylabel(L"$I_\star/I_\star(\gamma=0)$")
-    ax.legend(; legend_kwargs...)
+
+    mc_proxy = ax.scatter([], []; facecolor = "black", edgecolor = "k", s = 18, linewidths = 0.45)
+    mf_proxy, = ax.plot([], []; color = "black", linestyle = mf_linestyle, linewidth = 1.2)
+
+    leg1 = ax.legend(
+        [mc_proxy, mf_proxy],
+        [L"$\mathrm{MC}$", L"$\mathrm{MF}$"];
+        loc = "lower left",
+        legend_kwargs...
+    )
+
+    leg2 = ax.legend(
+        n_proxies,
+        n_labels;
+        loc = "lower right",
+        legend_kwargs...
+    )
+
+    ax.add_artist(leg1)
     ax.set_ylim(bottom = 1e-7, top = 10)
 
     return ax
@@ -125,7 +151,7 @@ function plot_spont_phase_diagram!(
 end
 
 function plot_spont_meanfield_g_gamma!(ax, data;
-    colors = ["red", "blue", "orange"],
+    colors = tab_colors,
     linestyle = "solid",
 )
     for (i, curve) in enumerate(data["curves"])
@@ -149,7 +175,8 @@ function plot_spont_meanfield_g_gamma!(ax, data;
 end
 
 function plot_spont_peak_times!(ax, data_coll, data_mf;
-    cs = ["red", "stub", "blue", "orange", "green"],
+    cs = tab_colors,
+    shown_powers = [4, 5, 6, 10, 23],
     xlabel = L"$\gamma \log N/(N\Gamma)$",
     ylabel = L"$N \Gamma t_{\star} /\log N$",
     ms = 2,
@@ -165,29 +192,34 @@ function plot_spont_peak_times!(ax, data_coll, data_mf;
     ),
 )
     ncurves_mc = size(data_coll["mc_t"], 2)
-    for j = 1:ncurves_mc
-        if j == 2
-            continue
+    mc_by_N = Dict(Float64(data_coll["Ns"][j]) => j for j in 1:ncurves_mc)
+
+    shown_mf_curves = [
+        (N = parse(Float64, curve.N), curve = curve)
+        for curve in data_mf["curves"]
+        if any(pow -> isapprox(Float64(curve.pow), Float64(pow); atol = 1e-10), shown_powers)
+    ]
+
+    for (i_color, item) in enumerate(shown_mf_curves)
+        N = item.N
+        if haskey(mc_by_N, N)
+            j = mc_by_N[N]
+            ax.scatter(
+                data_coll["gs"],
+                data_coll["mc_t"][:, j] / log(N) * N;
+                color = cs[mod1(i_color, length(cs))],
+                s = ms,
+            )
         end
-        N = data_coll["Ns"][j]
-        ax.scatter(
-            data_coll["gs"],
-            data_coll["mc_t"][:, j] / log(N) * N;
-            color = cs[j],
-            s = ms,
-        )
     end
 
-    ncurves_mf = length(data_mf["curves"])
-    for j = 1:ncurves_mf
-        if j == 2
-            continue
-        end
-        N = parse(Float64, data_mf["curves"][j].N)
+    for (i_color, item) in enumerate(shown_mf_curves)
+        N = item.N
+        curve = item.curve
         ax.plot(
-            data_mf["curves"][j].gs,
-            data_mf["curves"][j].max_t / log(N) * N;
-            color = cs[j],
+            curve.gs,
+            curve.max_t / log(N) * N;
+            color = cs[mod1(i_color, length(cs))],
             linestyle = "solid",
             linewidth = lw,
         )
@@ -209,22 +241,17 @@ function plot_spont_peak_times!(ax, data_coll, data_mf;
     n_proxies = Any[]
     n_labels = Any[]
 
-    for j = 1:ncurves_mf
-        if j == 2
-            continue
-        end
-        N = parse(Float64, data_mf["curves"][j].N)
-
+    for (i_color, item) in enumerate(shown_mf_curves)
         proxy, = ax.plot(
             [],
             [];
-            color = cs[j],
+            color = cs[mod1(i_color, length(cs))],
             linestyle = "solid",
             linewidth = lw,
         )
 
         push!(n_proxies, proxy)
-        push!(n_labels, sci_label(N))
+        push!(n_labels, sci_label(item.N))
     end
 
     leg2 = ax.legend(

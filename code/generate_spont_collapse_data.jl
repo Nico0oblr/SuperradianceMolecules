@@ -1,11 +1,12 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using JLD2
 
 function generate_spont_collapse_data(;
     outfile = "../plot_data/spont_collapse_data.jld2",
-    Ns = [1000, 10000, 50000],
+    Ns = [10000, 100000, 1000000],
     N_traj = 500,
     gs = range(0.0, 1.0, 300),
     r = 0.0,
@@ -16,23 +17,28 @@ function generate_spont_collapse_data(;
     mf_t = zeros(length(gs), length(Ns))
     mc_t = zeros(length(gs), length(Ns))
 
-    for (i, g) in enumerate(gs)
-        for (j, N) in enumerate(Ns)
-            params = Dict(
-                "global_decay" => 1.0,
-                "global_pump" => 0.0,
-                "local_pump" => 0.0,
-                "local_dephasing" => r * N,
-                "local_decay" => g * N / log(N),
-            )
+    jobs = collect(CartesianIndices((length(gs), length(Ns))))
 
-            imc, imf, tmc, tmf = mc_vs_mf_data(N, params, N_traj; time_factor=time_factor)
+    @threads for job in jobs
+        i, j = Tuple(job)
+        g = gs[i]
+        Nval = Ns[j]
+        @show g Nval
 
-            mf_itens[i, j] = imf
-            mc_intens[i, j] = imc
-            mf_t[i, j] = tmf
-            mc_t[i, j] = tmc
-        end
+        params = Dict(
+            "global_decay" => 1.0,
+            "global_pump" => 0.0,
+            "local_pump" => 0.0,
+            "local_dephasing" => r * Nval,
+            "local_decay" => g * Nval / log(Nval),
+        )
+
+        result = mc_vs_mf_adaptive(Nval, params, N_traj; time_factor=time_factor)
+
+        mf_itens[i, j] = result.I_mf
+        mc_intens[i, j] = result.I_mc
+        mf_t[i, j] = result.t_mf
+        mc_t[i, j] = result.t_mc
     end
 
     jldsave(outfile;

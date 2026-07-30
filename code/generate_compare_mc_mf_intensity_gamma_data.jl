@@ -1,11 +1,12 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using DifferentialEquations
 using JLD2
 
 function generate_compare_mc_mf_intensity_gamma_data(;
-    N = 30000,
+    N = 1000000,
     t_fac = 20,
     N_traj = 1000,
     g_xi = 0.5,
@@ -18,15 +19,16 @@ function generate_compare_mc_mf_intensity_gamma_data(;
 
     curves = Vector{NamedTuple}(undef, length(gbars_gamma))
 
-    for (i, gbar_gamma) in enumerate(gbars_gamma)
+    @threads for i in eachindex(gbars_gamma)
+        gbar_gamma = gbars_gamma[i]
         γ = gbar_gamma * N * Γ / log(N)
 
-        ts_mc, intens_mc = simulate_ensemble(
+        ts_mc, intens_mc = simulate_ensemble_adaptive(
             N, Γ, ξ, γ, tmax,
-            (S, M, N, Γ, ξ) -> [(S + M) * (S - M + 1)],
+            (S, M, N, Γ, ξ) -> (S + M) * (S - M + 1),
             N_traj
         )
-        I_mc = element(intens_mc, 1) ./ N^2
+        I_mc = intens_mc ./ N^2
 
         p = [Γ, ξ, N, γ]
         u0 = [1 / N, 1 / 2]

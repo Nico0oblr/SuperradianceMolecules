@@ -9,17 +9,41 @@ function namedtuple_to_dict(nt::NamedTuple)
     Dict(string(k) => v for (k, v) in pairs(nt))
 end
 
+function gamma_color(gbar, gbars, i; cmap_name="plasma")
+    if cmap_name == "plasma"
+        cmap = get_cmap(cmap_name)
+        norm = matplotlib.colors.Normalize(vmin=minimum(gbars), vmax=maximum(gbars))
+        return cmap(norm(gbar))
+    end
+
+    return tab_colors[mod1(i, length(tab_colors))]
+end
+
 # --------------------------------------------------
 # Panel (a)
 # --------------------------------------------------
 
-function plot_fig2b_gamma!(ax, data)
-    for (S_bg, M_bg) in data["bg_trajectories"]
-        ax.plot(S_bg, M_bg, color="k", alpha=0.15, linestyle="solid", linewidth=1.0)
-    end
+function plot_fig2b_gamma!(ax, data; cmap_name="plasma")
+    gbars = data["gbars_gamma"]
 
-    ax.plot(data["S_mc"], data["M_mc"], color="blue", linewidth=2.0, label="MC average")
-    ax.plot(data["S_mf"], data["M_mf"], color="red", linewidth=2.0, label="MF", linestyle = "dashed")
+    for (i, curve) in enumerate(data["curves"])
+        color = gamma_color(curve.gbar_gamma, gbars, i; cmap_name)
+
+        ax.plot(
+            curve.S_mc, curve.M_mc;
+            color = color,
+            linestyle = "-",
+            linewidth = 2.0,
+        )
+
+        ax.plot(
+            curve.S_mf, curve.M_mf;
+            color = color,
+            linestyle = "--",
+            linewidth = 1.2,
+            alpha = 0.8,
+        )
+    end
 
     ax.plot(data["Sgrid"], data["upper_boundary"], "k--", linewidth=1.5)
     ax.plot(data["Sgrid"], data["lower_boundary"], "k--", linewidth=1.5)
@@ -27,7 +51,35 @@ function plot_fig2b_gamma!(ax, data)
 
     ax.set_xlabel(L"$S/N$")
     ax.set_ylabel(L"$M/N$")
-    ax.legend(loc="lower left"; legend_kwargs...)
+
+    mc_proxy, = ax.plot([], []; color="black", linestyle="-", linewidth=2.0)
+    mf_proxy, = ax.plot([], []; color="black", linestyle="--", linewidth=1.2)
+
+    leg1 = ax.legend(
+        [mc_proxy, mf_proxy],
+        [L"$\mathrm{MC}$", L"$\mathrm{MF}$"];
+        loc="lower left",
+        legend_kwargs...
+    )
+
+    gbar_proxies = Any[]
+    gbar_labels = Any[]
+
+    for (i, gbar) in enumerate(gbars)
+        color = gamma_color(gbar, gbars, i; cmap_name)
+        proxy, = ax.plot([], []; color=color, linestyle="-", linewidth=2.0)
+        push!(gbar_proxies, proxy)
+        push!(gbar_labels, "\$\\bar g_\\gamma=$(gbar)\$")
+    end
+
+    leg2 = ax.legend(
+        gbar_proxies,
+        gbar_labels;
+        loc="upper left",
+        legend_kwargs...
+    )
+
+    ax.add_artist(leg1)
 
     return ax
 end
@@ -36,14 +88,12 @@ end
 # Panel (b)
 # --------------------------------------------------
 
-function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="viridis")
-    cmap = get_cmap(cmap_name)
+function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="plasma")
     gbars = data["gbars_gamma"]
-    norm = matplotlib.colors.Normalize(vmin=minimum(gbars), vmax=maximum(gbars))
 
-    for curve in data["curves"]
+    for (i, curve) in enumerate(data["curves"])
         gbar = curve.gbar_gamma
-        color = cmap(norm(gbar))
+        color = gamma_color(gbar, gbars, i; cmap_name)
 
         ax.plot(
             curve.ts_mc, curve.I_mc;
@@ -80,8 +130,8 @@ function plot_compare_mc_mf_intensity_gamma!(ax, data; cmap_name="viridis")
     gbar_proxies = Any[]
     gbar_labels = Any[]
 
-    for gbar in gbars
-        color = cmap(norm(gbar))
+    for (i, gbar) in enumerate(gbars)
+        color = gamma_color(gbar, gbars, i; cmap_name)
         proxy, = ax.plot([], []; color=color, linestyle="-", linewidth=2.0)
         push!(gbar_proxies, proxy)
         push!(gbar_labels, "\$\\bar g_\\gamma=$(gbar)\$")

@@ -5,22 +5,29 @@ using JLD2
 
 include("style.jl")
 
-function plot_fig2a!(ax, data)
-    for (S_bg, M_bg) in data["bg_trajectories"]
-        ax.plot(S_bg, M_bg, color="k", alpha=0.85, linestyle="solid", linewidth=1.0)
+function plot_fig2a!(ax, data; cmap_name="viridis")
+    cmap = get_cmap(cmap_name)
+    g_xis = data["g_xis"]
+    norm = matplotlib.colors.Normalize(vmin=minimum(g_xis), vmax=maximum(g_xis))
+
+    for curve in data["curves"]
+        color = cmap(norm(curve.g_xi))
+
+        ax.plot(
+            curve.S_mc, curve.M_mc;
+            color = color,
+            linestyle = "-",
+            linewidth = 2.0,
+        )
+
+        ax.plot(
+            curve.S_mf, curve.M_mf;
+            color = color,
+            linestyle = "--",
+            linewidth = 1.2,
+            alpha = 0.8,
+        )
     end
-
-    ax.plot(
-        data["S_mc"], data["M_mc"],
-        color="blue", linestyle="solid", linewidth=2.0,
-        label="MC average"
-    )
-
-    ax.plot(
-        data["S_mf"], data["M_mf"],
-        color="red", linestyle="dashed", linewidth=2.0,
-        label="MF"
-    )
 
     ax.plot(data["Sgrid"], data["upper_boundary"], "k--", linewidth=1.5)
     ax.plot(data["Sgrid"], data["lower_boundary"], "k--", linewidth=1.5)
@@ -28,7 +35,35 @@ function plot_fig2a!(ax, data)
 
     ax.set_xlabel(L"$S/N$")
     ax.set_ylabel(L"$M/N$")
-    ax.legend(loc="lower left"; legend_kwargs...)
+
+    mc_proxy, = ax.plot([], []; color = "black", linestyle = "-", linewidth = 2.0)
+    mf_proxy, = ax.plot([], []; color = "black", linestyle = "--", linewidth = 1.2)
+
+    leg1 = ax.legend(
+        [mc_proxy, mf_proxy],
+        [L"$\mathrm{MC}$", L"$\mathrm{MF}$"];
+        loc = "lower left",
+        legend_kwargs...
+    )
+
+    g_proxies = Any[]
+    g_labels = Any[]
+
+    for g_xi in g_xis
+        color = cmap(norm(g_xi))
+        proxy, = ax.plot([], []; color = color, linestyle = "-", linewidth = 2.0)
+        push!(g_proxies, proxy)
+        push!(g_labels, "\$g_\\xi=$(g_xi)\$")
+    end
+
+    leg2 = ax.legend(
+        g_proxies,
+        g_labels;
+        loc = "upper left",
+        legend_kwargs...
+    )
+
+    ax.add_artist(leg1)
 
     return ax
 end
@@ -102,7 +137,7 @@ function plot_dephasing_panel_a!(ax, d)
     mf_intens = d["mf_intens"]
     mc_intens = d["mc_intens"]
 
-    ax.plot(rs, 4 .* mf_intens[:, end], color="k", label="mean field")
+    ax.plot(rs, 4 .* mf_intens[:, end], color="k", label="MF \$N=10^6\$")
     for j in eachindex(Ns)
         ax.scatter(rs, mc_intens[:, j] ./ mc_intens[1, j], label=sci_label(Ns[j]))
     end
@@ -116,18 +151,18 @@ function plot_dephasing_panel_a!(ax, d)
     return ax
 end
 
-function plot_dephasing_panel_b!(ax, d; cs=["red", "blue", "orange"])
+function plot_dephasing_panel_b!(ax, d)
     rs = d["rs"]
     Ns = d["Ns"]
     mf_t = d["mf_t"]
     mc_t = d["mc_t"]
 
-    @assert length(cs) >= length(Ns)
-
     for j in eachindex(Ns)
-        ax.plot(rs, mf_t[:, j] .* Ns[j] ./ log(Ns[j]), color=cs[j], linestyle="solid")
         ax.scatter(rs, mc_t[:, j] .* Ns[j] ./ log(Ns[j]), label=sci_label(Ns[j]))
     end
+
+    j = length(Ns)
+    ax.plot(rs, mf_t[:, j] .* Ns[j] ./ log(Ns[j]), linestyle="solid", label="mean-field", color = "k")
 
     ax.set_xlim(left=0.4, right=1.1)
     ax.set_ylim(bottom=1.0, top=14)

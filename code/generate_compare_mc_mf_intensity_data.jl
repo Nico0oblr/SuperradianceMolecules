@@ -1,27 +1,27 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using DifferentialEquations
 using JLD2
 
 function generate_compare_mc_mf_intensity_data(;
-    N = 30000,
+    N = 1000000,
     t_fac = 20,
     N_traj = 1000,
-    rs = [0.0, 0.6, 0.9, 1.05],
+    rs = [0.0, 0.2, 0.4, 0.7, 0.9, 1.05],
     outfile = "../plot_data/fig_compare_mc_mf_intensity.jld2",
 )
     tmax = t_fac * log(N) / N
 
     curves = Vector{NamedTuple}(undef, length(rs))
 
-    for (i, r) in enumerate(rs)
-        ts_mc, intens_mc = simulate_ensemble(
-            N, 1.0, r * N, 0.0, tmax,
-            (S, M, N, Γ, ξ) -> [(S + M) * (S - M + 1)],
-            N_traj
-        )
-        I_mc = element(intens_mc, 1) ./ N^2
+    @threads for i in eachindex(rs)
+        @show rs[i]
+        r = rs[i]
+        ts_mc, intens_mc = @time simulate_ensemble_adaptive(N, 1.0, r * N, 0.0, tmax, (S, M, N, Γ, ξ) -> (S + M) * (S - M + 1), N_traj; nsave = 2000)
+
+        I_mc = intens_mc ./ N^2
 
         p = [1.0, r * N, N, 0.0]
         u0 = [1 / N, 1 / 2]

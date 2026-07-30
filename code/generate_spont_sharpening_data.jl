@@ -1,6 +1,7 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using DifferentialEquations
 using JLD2
 
@@ -18,9 +19,13 @@ function generate_spont_sharpening_data(;
         N = BigInt(10)^pow
         Nf = Float64(N)
 
-        intens = Float64[]
-        max_t = Float64[]
-        for g in gs
+        intens = zeros(Float64, length(gs))
+        max_t = zeros(Float64, length(gs))
+        t_end = 100.0 * log(Nf) / Nf
+        saveat = range(0.0, t_end, 10000)
+
+        @threads for i in eachindex(gs)
+            g = gs[i]
             Γ = 1.0
             ξ = Nf * r
             γ = Nf * g / log(Nf)
@@ -28,28 +33,27 @@ function generate_spont_sharpening_data(;
             p = [Γ, ξ, Nf, γ]
             u0 = [-log(Nf), 0.5]
 
-            t_end = 100.0 * log(Nf) / Nf
             prob = ODEProblem(meanfield_log_transformed!, u0, (0.0, t_end), p)
             sol = solve(
                 prob,
                 AutoTsit5(Rosenbrock23()),
                 reltol = reltol,
                 abstol = abstol,
-                saveat = range(0.0, t_end, 10000)
+                saveat = saveat
             )
 
             max_ind = argmax(map(x -> x[1], sol.u))
             max_log_I = maximum(x -> x[1], sol.u)
-            push!(intens, exp(max_log_I))
-            push!(max_t, sol.t[max_ind])
+            intens[i] = exp(max_log_I)
+            max_t[i] = sol.t[max_ind]
         end
 
         push!(curves, (
             pow = pow,
             N = string(N),
             gs = collect(gs),
-            intens = collect(intens),
-            max_t = collect(max_t),
+            intens = intens,
+            max_t = max_t,
         ))
     end
 

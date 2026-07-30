@@ -12,6 +12,10 @@ const legend_kwargs = (
 
 # Default colors (optional but useful)
 const default_colors = ["red", "blue", "orange", "green", "violet", "cyan"]
+const tab_colors = [
+    "tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple",
+    "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan",
+]
 
 # Line / marker defaults
 const default_lw = 1.8
@@ -24,6 +28,9 @@ function sci_label(N)
     # if mantissa is (numerically) an integer → print as Int
     if isapprox(mant, round(mant); atol=1e-4)
         mant_str = string(Int(round(mant)))
+        if Int(round(mant)) == 1
+            return "\$N=10^{$exp}\$"
+        end
     else
         mant_str = string(mant)
     end

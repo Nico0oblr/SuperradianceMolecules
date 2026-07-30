@@ -62,6 +62,27 @@ function fit_B_over_N(Ns, ys; Nmin=1e5)
     )
 end
 
+function nearest_r_index(rs, target)
+    distances = abs.(Float64.(rs) .- Float64(target))
+    return argmin(distances)
+end
+
+function selected_r_indices(rs, targets, predicate)
+    inds = Int[]
+    for target in targets
+        j = nearest_r_index(rs, target)
+        @assert predicate(rs[j]) "Nearest available g_xi=$(rs[j]) does not match requested side for target $target."
+        push!(inds, j)
+    end
+
+    return unique(inds)
+end
+
+function color_positions(n)
+    n == 1 && return [0.5]
+    return collect(range(0.15, 0.85, length=n))
+end
+
 # --------------------------------------------------
 # Panel D
 # --------------------------------------------------
@@ -71,7 +92,7 @@ function plot_dephasing_panel_d!(ax, d)
     Ns = d["Ns"]
     mc_intens = d["mc_intens"]
 
-    for j in eachindex(rs)
+    for j in eachindex(rs)[[1,3,4,6]]
         Is = mc_intens[j, :]
         x = log.(Ns)
         y = log.(Is)
@@ -83,7 +104,7 @@ function plot_dephasing_panel_d!(ax, d)
         ax.scatter(
             Ns,
             Is,
-            label = "\$g_\\xi=$(rs[j])\\,(\\alpha=$(round(b, digits=2)))\$"
+            label = "\$g_\\xi=$(rs[j])\\,(\\beta=$(round(b, digits=2)))\$"
         )
         ax.plot(Ns, a .* Ns.^b, linestyle = "-")
     end
@@ -102,35 +123,81 @@ end
 # --------------------------------------------------
 
 function plot_dephasing_peak_time_panel!(ax, data;
-    colors_scatter = ["red", "blue"],
-    colors_mf = ["orange", "cyan"],
+    colors_scatter = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple",
+ "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"],
+    colors_mf = colors_scatter,
 )
     Ns = data["Ns"]
     rs = data["rs"]
     mc_t = data["mc_t"]
 
-    @assert length(rs) >= 2
-    @assert length(colors_scatter) >= 2
-    @assert length(colors_mf) >= 2
+    @assert length(rs) >= 3
+    @assert size(mc_t, 1) >= 3
+    @assert length(colors_scatter) >= 3
+    @assert length(colors_mf) >= 3
 
-    for j in 1:2
+    for j in 1:3
         ax.scatter(
             Ns,
-            mc_t[j, :],
+            mc_t[j, :];
             color = colors_scatter[j],
-            label = "MC \$g_\\xi=$(rs[j])\$"
         )
 
         ax.plot(
             Ns,
-            log.(Ns) ./ Ns ./ (1.0 .- rs[j]),
+            log.(Ns) ./ Ns ./ (1.0 .- rs[j]);
             color = colors_mf[j],
-            linestyle = "solid",
-            label = "MF \$g_\\xi=$(rs[j])\$"
+            linestyle = "-",
+            linewidth = 1.5,
         )
     end
 
-    ax.legend(; legend_kwargs...)
+    mc_proxy = ax.scatter(
+        Float64[],
+        Float64[];
+        color = "black",
+    )
+
+    mf_proxy, = ax.plot(
+        Float64[],
+        Float64[];
+        color = "black",
+        linestyle = "-",
+        linewidth = 1.5,
+    )
+
+    leg1 = ax.legend(
+        [mc_proxy, mf_proxy],
+        [L"$\mathrm{MC}$", L"$\mathrm{MF}$"];
+        loc = "lower left",
+        legend_kwargs...
+    )
+
+    r_proxies = Any[]
+    r_labels = String[]
+
+    for j in 1:3
+        proxy, = ax.plot(
+            Float64[],
+            Float64[];
+            color = colors_scatter[j],
+            linestyle = "-",
+            linewidth = 2.0,
+        )
+
+        push!(r_proxies, proxy)
+        push!(r_labels, "\$g_\\xi=$(rs[j])\$")
+    end
+
+    ax.legend(
+        r_proxies,
+        r_labels;
+        loc = "upper left",
+        legend_kwargs...
+    )
+
+    ax.add_artist(leg1)
+
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(L"$N$")
@@ -143,48 +210,65 @@ end
 # Below-threshold fit panel
 # --------------------------------------------------
 
-function plot_dephasing_panel_c_below_fit!(ax, d; which=2, Nmin=1e5)
+function plot_dephasing_panel_c_below_fit!(ax, d;
+    which = nothing,
+    rs_fit = [0.6, 0.8, 0.95],
+    Nmin = 1e5,
+)
     rs = d["rs"]
     Ns = d["Ns"]
     mc_intens = d["mc_intens"]
 
-    below_inds = findall(<(1), rs)
-    @assert length(below_inds) >= which "Need at least $which values with g_xi < 1."
-    j = below_inds[which]
-
-    r = rs[j]
     x = Float64.(Ns)
-    y = Float64.(mc_intens[j, :] ./ Ns.^2)
+    below_inds = rs_fit === nothing ? [findall(<(1), rs)[which]] : selected_r_indices(rs, rs_fit, <(1))
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
 
-    fitdata = fit_A_plus_B_over_N(x, y; Nmin=Nmin)
-    A, B = fitdata.A, fitdata.B
-    mask = fitdata.mask
-    model = fitdata.model
+    results = NamedTuple[]
 
-    ax.scatter(
-        x, y,
-        label = "\$g_\\xi=$(r)\$"
-    )
+    for (k, j) in enumerate(below_inds)
+        r = rs[j]
+        y = Float64.(mc_intens[j, :] ./ Ns.^2)
 
-    ax.scatter(
-        x[mask], y[mask],
-        facecolor = "red",
-        edgecolors = "k",
-        linewidths = 0.8,
-        zorder = 3
-    )
+        fitdata = fit_A_plus_B_over_N(x, y; Nmin=Nmin)
+        A, B = fitdata.A, fitdata.B
+        mask = fitdata.mask
+        model = fitdata.model
 
-    xline = collect(range(minimum(x[mask]), maximum(x), length=400))
-    yline = model(xline, [A, B])
+        color = colors[k]
+        ax.scatter(
+            x, y,
+            color = color,
+            label = "\$g_\\xi=$(r)\$"
+        )
 
-    ax.plot(
-        xline, yline,
-        color = "k",
-        linestyle = "-",
-        linewidth = 1.8,
-        label = "\$A+B/N\$ fit",
-        zorder = 10
-    )
+        ax.scatter(
+            x[mask], y[mask],
+            facecolor = color,
+            edgecolors = "k",
+            linewidths = 0.8,
+            zorder = 3
+        )
+
+        xline = collect(range(minimum(x[mask]), maximum(x), length=400))
+        yline = model(xline, [A, B])
+
+        ax.plot(
+            xline, yline,
+            color = color,
+            linestyle = "-",
+            linewidth = 1.8,
+            label = k == length(below_inds) ? "\$A+B/N\$ fits" : nothing,
+            zorder = 10
+        )
+
+        push!(results, (
+            r = r,
+            A = A,
+            B = B,
+            fit = fitdata.fit,
+            mask = mask,
+        ))
+    end
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -194,11 +278,7 @@ function plot_dephasing_panel_c_below_fit!(ax, d; which=2, Nmin=1e5)
 
     return (
         ax = ax,
-        r = r,
-        A = A,
-        B = B,
-        fit = fitdata.fit,
-        mask = mask,
+        fits = results,
     )
 end
 
@@ -206,48 +286,64 @@ end
 # Above-threshold fit panel
 # --------------------------------------------------
 
-function plot_dephasing_panel_c_above_fit!(ax, d; which=2, Nmin=1e5)
+function plot_dephasing_panel_c_above_fit!(ax, d;
+    which = nothing,
+    rs_fit = [1.05, 1.1, 1.15],
+    Nmin = 1e5,
+)
     rs = d["rs"]
     Ns = d["Ns"]
     mc_intens = d["mc_intens"]
 
-    above_inds = findall(>(1), rs)
-    @assert length(above_inds) >= which "Need at least $which values with g_xi > 1."
-    j = above_inds[which]
-
-    r = rs[j]
     x = Float64.(Ns)
-    y = Float64.(mc_intens[j, :] ./ Ns.^2)
+    above_inds = rs_fit === nothing ? [findall(>(1), rs)[which]] : selected_r_indices(rs, rs_fit, >(1))
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
 
-    fitdata = fit_B_over_N(x, y; Nmin=Nmin)
-    B = fitdata.B
-    mask = fitdata.mask
-    model = fitdata.model
+    results = NamedTuple[]
 
-    ax.scatter(
-        x, y,
-        label = "\$g_\\xi=$(r)\$"
-    )
+    for (k, j) in enumerate(above_inds)
+        r = rs[j]
+        y = Float64.(mc_intens[j, :] ./ Ns.^2)
 
-    ax.scatter(
-        x[mask], y[mask],
-        facecolor = "red",
-        edgecolors = "k",
-        linewidths = 0.8,
-        zorder = 3
-    )
+        fitdata = fit_B_over_N(x, y; Nmin=Nmin)
+        B = fitdata.B
+        mask = fitdata.mask
+        model = fitdata.model
 
-    xline = collect(range(minimum(x[mask]), maximum(x), length=400))
-    yline = model(xline, [B])
+        color = colors[k]
+        ax.scatter(
+            x, y,
+            color = color,
+            label = "\$g_\\xi=$(r)\$"
+        )
 
-    ax.plot(
-        xline, yline,
-        color = "k",
-        linestyle = "-",
-        linewidth = 1.8,
-        label = "\$B/N\$ fit",
-        zorder = 10
-    )
+        ax.scatter(
+            x[mask], y[mask],
+            facecolor = color,
+            edgecolors = "k",
+            linewidths = 0.8,
+            zorder = 3
+        )
+
+        xline = collect(range(minimum(x[mask]), maximum(x), length=400))
+        yline = model(xline, [B])
+
+        ax.plot(
+            xline, yline,
+            color = color,
+            linestyle = "-",
+            linewidth = 1.8,
+            label = k == length(above_inds) ? "\$B/N\$ fits" : nothing,
+            zorder = 10
+        )
+
+        push!(results, (
+            r = r,
+            B = B,
+            fit = fitdata.fit,
+            mask = mask,
+        ))
+    end
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -257,10 +353,7 @@ function plot_dephasing_panel_c_above_fit!(ax, d; which=2, Nmin=1e5)
 
     return (
         ax = ax,
-        r = r,
-        B = B,
-        fit = fitdata.fit,
-        mask = mask,
+        fits = results,
     )
 end
 
@@ -287,8 +380,8 @@ function main(; datafile=nothing, outfile=nothing)
 
     plot_dephasing_panel_d!(axes[1,1], d)
     plot_dephasing_peak_time_panel!(axes[1,2], d)
-    plot_dephasing_panel_c_below_fit!(axes[2,1], d; which = 2)
-    plot_dephasing_panel_c_above_fit!(axes[2,2], d; which = 1)
+    plot_dephasing_panel_c_below_fit!(axes[2,1], d)
+    plot_dephasing_panel_c_above_fit!(axes[2,2], d)
 
     tight_layout()
 

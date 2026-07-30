@@ -1,49 +1,58 @@
 include("PermBasis.jl")
 include("MonteCarloMF.jl")
 
+using Base.Threads
 using JLD2
 
 function generate_dephasing_finiteN_scan(;
     Ns = Int.(round.(10 .^ range(4, 7.0, 50))),
-    rs = [0.1, 0.95, 1.05],
+    rs = [0.6, 0.8, 0.95, 1.05, 1.1, 1.15],
     N_traj = 800,
     g = 0.0,
     time_factor = 16.0,
     outfile = "../plot_data/dephasing_finiteN_scan.jld2",
-    save_progress = true,
+    save_progress = false,
 )
     mc_intens = zeros(length(rs), length(Ns))
     mc_t = zeros(length(rs), length(Ns))
 
-    for (i, r) in enumerate(rs)
-        println("Finite-N scan: r = $r [$i/$(length(rs))]")
-        for (j, N) in enumerate(Ns)
-            println("  N = $N [$j/$(length(Ns))]")
+    jobs = collect(CartesianIndices((length(rs), length(Ns))))
+    progress_lock = ReentrantLock()
+    completed = Ref(0)
 
-            params = Dict(
-                "global_decay" => 1.0,
-                "global_pump" => 0.0,
-                "local_pump" => 0.0,
-                "local_dephasing" => r * N,
-                "local_decay" => g * N / log(N),
-            )
+    @threads for job in jobs
+        i, j = Tuple(job)
+        r = rs[i]
+        Nval = Ns[j]
 
-            imc, tmc = mc_data(N, params, N_traj; time_factor = time_factor)
+        params = Dict(
+            "global_decay" => 1.0,
+            "global_pump" => 0.0,
+            "local_pump" => 0.0,
+            "local_dephasing" => r * Nval,
+            "local_decay" => g * Nval / log(Nval),
+        )
 
+        imc, tmc = mc_data_adaptive(Nval, params, N_traj; time_factor = time_factor)
+
+        lock(progress_lock) do
             mc_intens[i, j] = imc
             mc_t[i, j] = tmc
-        end
 
-        if save_progress
-            jldsave(outfile;
-                rs = rs,
-                Ns = Ns,
-                N_traj = N_traj,
-                g = g,
-                time_factor = time_factor,
-                mc_intens = mc_intens,
-                mc_t = mc_t,
-            )
+            completed[] += 1
+            println("Finite-N scan: r = $r [$i/$(length(rs))], N = $Nval [$j/$(length(Ns))], completed $(completed[])/$(length(jobs))")
+
+            if save_progress
+                jldsave(outfile;
+                    rs = rs,
+                    Ns = Ns,
+                    N_traj = N_traj,
+                    g = g,
+                    time_factor = time_factor,
+                    mc_intens = mc_intens,
+                    mc_t = mc_t,
+                )
+            end
         end
     end
 
