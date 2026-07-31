@@ -22,8 +22,7 @@ code/
   generate_*.jl               Data-generation entry points
   fig2_mean_field.ipynb       Final main-text Figure 2
   fig3_mean_field.ipynb       Final main-text Figure 3
-  plot_beta_mc.ipynb          Beta/phase-boundary figure
-  AppFigs.ipynb               Additional appendix figures
+  AppFigs.ipynb               Beta and additional appendix figures
   Makefile                    Data-generation dependency graph
 
 plot_data/                    Generated JLD2 datasets
@@ -119,11 +118,12 @@ in order.
 |---|---|---|
 | `fig2_mean_field.ipynb` | `data/fig2.pdf` | Final main-text Figure 2, including its insets |
 | `fig3_mean_field.ipynb` | `data/fig3.pdf` | Final main-text Figure 3 |
-| `plot_beta_mc.ipynb` | `data/figS1.pdf` | Beta scaling and analytical-boundary figure |
-| `AppFigs.ipynb` | `data/figS5.pdf`, `data/small_spontaneous.pdf` | Additional appendix figures |
+| `AppFigs.ipynb` | `data/figS1.pdf` | Beta scaling and analytical-boundary figure |
+| `AppFigs.ipynb` | `data/figS3.pdf`, `data/S4.pdf` | Additional appendix figures |
 
-`AppFigs.ipynb` imports all of its reusable plotting methods from
-`plot_appendix.jl`.
+`AppFigs.ipynb` imports its shared appendix-panel methods from
+`plot_appendix.jl`; its beta-specific analysis and plotting methods are
+currently defined in the notebook.
 
 ## Reproducibility notes
 
