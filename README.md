@@ -6,9 +6,9 @@ spontaneous emission. The numerical routines combine stochastic trajectories
 with mean-field calculations.
 
 The repository is intentionally limited to routines that contribute to the
-figures currently used in the paper and its appendix. The main-text Figure 1
-workflow is **not included**: the former Figure 1 notebook was obsolete and the
-current Figure 1 is produced elsewhere.
+figures currently used in the paper and its appendix. The notebooks export the
+plots and panels used as source material; the final paper figures were assembled
+and adjusted in Inkscape.
 
 ## Repository layout
 
@@ -20,40 +20,34 @@ code/
   style.jl                    Shared colors, legends, and labels
   plot_appendix.jl            Plotting methods used by AppFigs.ipynb
   generate_*.jl               Data-generation entry points
-  fig2_mean_field.ipynb       Final main-text Figure 2
-  fig3_mean_field.ipynb       Final main-text Figure 3
-  AppFigs.ipynb               Beta and additional appendix figures
+  fig1_mean_field.ipynb       Source plots for Figure 1 and related appendix panels
+  fig2_mean_field.ipynb       Source plot for main-text Figure 2
+  fig3_mean_field.ipynb       Source plot for main-text Figure 3
+  AppFigs.ipynb               Supplementary figures and panels
   Makefile                    Data-generation dependency graph
 
 plot_data/                    Generated JLD2 datasets
-data/                         Generated PDF figures
+data/                         Generated PDF source plots and panels
 ```
 
 ## Requirements
 
-The code has been tested with Julia 1.12. It uses the following Julia packages:
-
-- `DifferentialEquations`
-- `OrdinaryDiffEq`
-- `Distributions`
-- `JLD2`
-- `PyPlot`
-- `PyCall`
-- `LsqFit`
-- `IJulia` for running the notebooks
-
-They can be installed in the active Julia environment with:
+The code has been tested with Julia 1.12. Its Julia dependencies are declared in
+`Project.toml`, while `Manifest.toml` records the exact environment used for
+reproducibility. To recreate that environment in a fresh clone, run:
 
 ```bash
-julia -e 'using Pkg; Pkg.add(["DifferentialEquations", "OrdinaryDiffEq", "Distributions", "JLD2", "PyPlot", "PyCall", "LsqFit", "IJulia"])'
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
+
+This step is optional if the required packages are already available through
+your usual Julia setup and you prefer to use that environment. No nonstandard
+package installation procedure is required. The `Makefile` selects the
+repository project for reproducible batch runs.
 
 `PlotSetup.jl` configures Matplotlib to render text with LaTeX. A working LaTeX
 installation containing the `physics`, `bm`, and `amsfonts` packages is
 therefore required to reproduce the PDF figures.
-
-The repository currently does not contain a `Project.toml`, so commands use the
-active Julia environment.
 
 ## Generate the data
 
@@ -114,12 +108,17 @@ All files are written to `plot_data/` by default.
 Open the notebooks with their working directory set to `code/`. Run their cells
 in order.
 
-| Notebook | Current output | Purpose |
+| Notebook | Generated PDF(s) | Purpose |
 |---|---|---|
-| `fig2_mean_field.ipynb` | `data/fig2.pdf` | Final main-text Figure 2, including its insets |
-| `fig3_mean_field.ipynb` | `data/fig3.pdf` | Final main-text Figure 3 |
-| `AppFigs.ipynb` | `data/figS1.pdf` | Beta scaling and analytical-boundary figure |
-| `AppFigs.ipynb` | `data/figS3.pdf`, `data/S4.pdf` | Additional appendix figures |
+| `fig1_mean_field.ipynb` | `data/fig1a.pdf`, `data/fig1b.pdf`, `data/figS1d.pdf`, `data/figS2a.pdf` | Source panels for Figure 1 and related supplementary figures |
+| `fig2_mean_field.ipynb` | `data/fig2.pdf` | Source plot for main-text Figure 2, including its insets |
+| `fig3_mean_field.ipynb` | `data/fig3.pdf` | Source plot for main-text Figure 3 |
+| `AppFigs.ipynb` | `data/figS1.pdf`, `data/figS2b.pdf`, `data/figS3.pdf`, `data/figS4.pdf` | Supplementary plots and panels |
+
+These PDFs reproduce the plots generated in Julia. For the submitted paper,
+the exported plots were imported into Inkscape for final panel assembly,
+lettering, alignment, and layout. Consequently, the paper-ready composite
+figures are not necessarily byte-for-byte outputs of a single notebook cell.
 
 `AppFigs.ipynb` imports its shared appendix-panel methods from
 `plot_appendix.jl`; its beta-specific analysis and plotting methods are
@@ -127,8 +126,9 @@ currently defined in the notebook.
 
 ## Reproducibility notes
 
-- Randomized Monte Carlo calculations are not globally seeded, so regenerated
-  datasets will show ordinary sampling variation.
+- Monte Carlo ensemble functions use a fixed default seed, so repeated runs with
+  identical inputs are reproducible. A different random-number generator can be
+  supplied explicitly when independent samples are desired.
 - The default generators use multithreading where applicable. Set
   `JULIA_NUM_THREADS` explicitly when recording computational details.
 - Generator defaults reproduce the retained production scans and can require
