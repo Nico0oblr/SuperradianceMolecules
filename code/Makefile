@@ -1,4 +1,4 @@
-JULIA := julia
+JULIA := julia --project=..
 
 CODE := .
 PLOT_DATA := ../plot_data

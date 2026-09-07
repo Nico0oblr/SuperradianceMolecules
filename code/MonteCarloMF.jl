@@ -36,7 +36,7 @@ end
            (4.0 * (J + 1.0) * (2.0 * J + 1.0))
 end
 
-function run_trajectory(N::Int64, Γ::Float64, ξ::Float64, γ::Float64, t_max::Float64, observable; M0::Int64 = N ÷ 2, S0::Int64 = N ÷ 2, sizehint::Int64 = 0)
+function run_trajectory(N::Int64, Γ::Float64, ξ::Float64, γ::Float64, t_max::Float64, observable; M0::Int64 = N ÷ 2, S0::Int64 = N ÷ 2, sizehint::Int64 = 0, rng = Random.default_rng())
     
     S::Float64 = S0
     M::Float64 = M0
@@ -67,8 +67,8 @@ function run_trajectory(N::Int64, Γ::Float64, ξ::Float64, γ::Float64, t_max::
         end
         
 
-        tau = -log(rand()) / r_total        
-        r_val = rand() * r_total
+        tau = -log(rand(rng)) / r_total
+        r_val = rand(rng) * r_total
         
         if r_val < r_dec
             # Decay: m -> m - 1
@@ -97,14 +97,14 @@ function run_trajectory(N::Int64, Γ::Float64, ξ::Float64, γ::Float64, t_max::
     return times, out
 end
 
-function simulate_ensemble_single(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0 = N ÷ 2, S0 = N ÷ 2)
+function simulate_ensemble_single(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0 = N ÷ 2, S0 = N ÷ 2, rng = Xoshiro(1234))
     
     # Create a common time grid for averaging
     time_grid = range(0, t_max, length=1000)
     avg_obs = Vector{Any}(nothing, length(time_grid))
 
     for i=1:N_traj
-        ts, Is= run_trajectory(N, Γ, ξ, γ, t_max, observable; M0 = M0, S0 = S0)
+        ts, Is= run_trajectory(N, Γ, ξ, γ, t_max, observable; M0 = M0, S0 = S0, rng = rng)
         
         idx = 1
         for (k, t_point) in enumerate(time_grid)
@@ -178,12 +178,12 @@ expval_S(state, index_mapping) = sum(state[value] * key[1] for (key,value) in in
 expval_M(state, index_mapping) = sum(state[value] * key[2] for (key,value) in index_mapping)
 expval_I(state, index_mapping) = sum(state[value] * ((S+M) * (S-M+1)) for ((S,M),value) in index_mapping)
 
-function simulate_ensemble(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0 = N ÷ 2, S0 = N ÷ 2)
+function simulate_ensemble(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0 = N ÷ 2, S0 = N ÷ 2, rng = Xoshiro(1234))
 
     time_grid = range(0, t_max, length=10000)
 
     # First trajectory to infer observable shape/type
-    ts, Is = run_trajectory(N, Γ, ξ, γ, t_max, observable; M0=M0, S0=S0)
+    ts, Is = run_trajectory(N, Γ, ξ, γ, t_max, observable; M0=M0, S0=S0, rng=rng)
     sample = Is[1]
 
     avg_obs = [zero(sample) for _ in eachindex(time_grid)]
@@ -202,7 +202,7 @@ function simulate_ensemble(N, Γ, ξ, γ, t_max::Float64, observable, N_traj; M0
     accumulate!(avg_obs, ts, Is, time_grid)
 
     for i in 2:N_traj
-        ts, Is = run_trajectory(N, Γ, ξ, γ, t_max, observable; M0=M0, S0=S0)
+        ts, Is = run_trajectory(N, Γ, ξ, γ, t_max, observable; M0=M0, S0=S0, rng=rng)
         accumulate!(avg_obs, ts, Is, time_grid)
     end
 

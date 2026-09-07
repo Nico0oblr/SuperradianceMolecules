@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this code or its data, please cite this software release."
+title: "Code and data for Scaling theory of decoherence in Dicke superradiance"
+type: software
+version: 1.0.0
+authors:
+  - given-names: "Nico S."
+    family-names: "Bassler"
+    orcid: "https://orcid.org/0000-0003-0625-7301"
+    affiliation: "Institute for Applied Physics, TU Darmstadt"
+  - given-names: "Julian"
+    family-names: "Lyne"
+    orcid: "https://orcid.org/0009-0008-6314-9271"
+    affiliation: "Department of Physics, Friedrich-Alexander-Universität Erlangen-Nürnberg; Max Planck Institute for the Science of Light"
+  - given-names: "Javier"
+    family-names: "Cuerda"
+    orcid: "https://orcid.org/0000-0002-1932-2718"
+    affiliation: "Institute for Applied Physics, TU Darmstadt; CESQ/ISIS (UMR 7006), CNRS and Université de Strasbourg"
+abstract: >-
+  Julia code and numerical data used to generate the figures for the paper
+  "Scaling theory of decoherence in Dicke superradiance". The repository
+  contains stochastic-trajectory and mean-field calculations together with
+  the notebooks used to produce the source plots.
+keywords:
+  - Dicke superradiance
+  - dephasing
+  - spontaneous emission
+  - stochastic trajectories
+  - mean-field theory
+  - Julia
+license: MIT
+repository-code: "https://github.com/Nico0oblr/SuperradianceMolecules"
