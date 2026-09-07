@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this code or its data, please cite this software release."
+message: "If you use this code or its data, please cite the paper below."
 title: "Code and data for Scaling theory of decoherence in Dicke superradiance"
 type: software
 version: 1.0.0
@@ -30,3 +30,19 @@ keywords:
   - Julia
 license: MIT
 repository-code: "https://github.com/Nico0oblr/SuperradianceMolecules"
+preferred-citation:
+  type: article
+  title: "Scaling theory of decoherence in Dicke superradiance"
+  authors:
+    - given-names: "Nico S."
+      family-names: "Bassler"
+      orcid: "https://orcid.org/0000-0003-0625-7301"
+    - given-names: "Julian"
+      family-names: "Lyne"
+      orcid: "https://orcid.org/0009-0008-6314-9271"
+    - given-names: "Javier"
+      family-names: "Cuerda"
+      orcid: "https://orcid.org/0000-0002-1932-2718"
+  year: 2026
+  doi: "10.48550/arXiv.2607.28034"
+  url: "https://arxiv.org/abs/2607.28034"
